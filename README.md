@@ -1,91 +1,191 @@
 # Java Learn — Frontend
 
-หน้าบ้านของเว็บเรียนภาษา Java แบบ interactive สำหรับนักศึกษา comsci ปี 1 — เรียนบทเรียน 3 ระดับ เขียนโค้ดในเบราว์เซอร์ แล้วรันดูผลลัพธ์ได้จริง
-Frontend for an interactive Java learning site for first-year CS students — 3 difficulty levels, an in-browser code editor, and real code execution.
+An interactive Java learning site for first-year CS students, built as a single-page Nuxt 2 / Vue 2 application. Students enter their name and email (no signup, no password) to save their session locally, then work through lessons split into three difficulty levels (easy / medium / hard), write Java code directly in an in-browser CodeMirror editor, run it against a public code-execution service, and submit exercise solutions for automatic grading against the backend's test cases. Progress is tracked per level and shown on both the lessons list and a dedicated progress page. This frontend is a pure API client — all lesson content, code execution, and grading logic live in a separate backend service: [basic-java-learn-backend](https://github.com/RmenozBun/basic-java-learn-backend).
 
-หลังบ้าน (backend) อยู่คนละ repo: https://github.com/RmenozBun/basic-java-learn-backend
-The backend lives in a separate repo: https://github.com/RmenozBun/basic-java-learn-backend
+## Features
 
-## Stack
+- **Guest-style onboarding** (`pages/start.vue`) — collects a name and email, stored in Vuex and mirrored to `localStorage` (`javaLearnStudent`) so the session survives page reloads, with no real authentication.
+- **Lesson catalog** (`pages/lessons/index.vue`) — lists lessons fetched from the backend, filterable by level (all / easy / medium / hard) via tabs, with an overall progress bar showing completed vs. total exercises.
+- **Lesson detail pages** (`pages/lessons/_slug.vue`) — renders lesson content from Markdown (via `marked`), lists the lesson's exercises, and shows next/previous lesson navigation plus a completion banner once every exercise in the lesson is passed.
+- **In-browser Java code editor** (`components/CodeEditor.vue`) — wraps CodeMirror 5 with Java syntax highlighting (dracula theme), lazily loaded client-side only (inside `<client-only>`) since Nuxt runs in SPA mode.
+- **Exercises with run + submit** (`components/ExerciseCard.vue`) — "Run" executes the student's code against ad-hoc standard input for self-testing (not graded); "Submit" runs the code against the exercise's real test cases and records a pass/fail result via the backend.
+- **Free-form Playground** (`pages/playground.vue`) — write and run arbitrary single-file Java code with custom standard input, independent of any lesson; the page documents the execution service's real constraints (English/ASCII only, single file, standard Java SE library only, no SLA).
+- **Progress tracking** (`pages/progress.vue`) — per-level breakdown of completed vs. total exercises with progress bars, shown once a student session exists.
+- **Backend connectivity feedback** (`plugins/axios.js`) — shows an alert dialog whenever an API call fails with no response, prompting the user to check that the backend server is running.
 
-- Nuxt.js 2 (Vue 2, Options API)
-- Vuetify 2
-- CodeMirror 5 (in-browser Java code editor)
-- SPA mode (`ssr: false`) — pure client-side rendering, generated as a static site
+## Tech Stack
 
-## โครงสร้างโปรเจกต์ | Project structure
+- [Nuxt.js 2](https://nuxtjs.org/) (Vue 2, Options API), running in SPA mode (`ssr: false`, `target: 'static'`) since the app relies on `localStorage`-based sessions with no server-side rendering benefit
+- [Vuetify 2](https://vuetifyjs.com/) for UI components and theming
+- [CodeMirror 5](https://codemirror.net/5/) for the in-browser Java code editor
+- [@nuxtjs/axios](https://axios.nuxtjs.org/) for API calls to the backend
+- [marked](https://marked.js.org/) for rendering lesson content from Markdown
+- [notiflix](https://notiflix.github.io/) for loading indicators
+- [vue-sweetalert2](https://github.com/avil13/vue-sweetalert2) for alert/confirmation dialogs
+- Vuex (built into Nuxt) for storing the current student session
 
-```text
-pages/
-  index.vue           # หน้าแรก | landing page
-  start.vue           # กรอกชื่อ+อีเมลก่อนเริ่มเรียน | name+email entry before learning
-  lessons/index.vue   # รายการบทเรียนทั้งหมด + progress bar | lesson list + progress bar
-  lessons/_slug.vue   # เนื้อหาบทเรียน + แบบฝึกหัด + ปุ่มไปต่อ/กลับ | lesson content + exercises + next/back nav
-  playground.vue      # เขียน/รันโค้ด Java อิสระ | free-form Java code playground
-  progress.vue        # สรุปความคืบหน้าของผู้เรียน | student progress summary
-components/
-  CodeEditor.vue       # ครอบ CodeMirror 5 (ต้องอยู่ใน <client-only>) | wraps CodeMirror 5 (must stay <client-only>)
-  ExerciseCard.vue      # กล่องแบบฝึกหัด: editor + ปุ่มรัน/ส่งคำตอบ | exercise box: editor + run/submit buttons
-store/index.js         # เก็บ session ผู้เรียน (ชื่อ+อีเมล) | holds the student session (name+email)
-plugins/
-  axios.js             # แจ้งเตือนเมื่อเชื่อมต่อ backend ไม่ได้ | alerts when the backend is unreachable
-  notiflix.js           # loading indicator shim
-  hydrate-session.js    # โหลด session จาก localStorage ก่อน mount หน้าแรก | hydrates session from localStorage before first page mounts
-```
+## Getting Started
 
-## เริ่มรันในเครื่อง | Local development
+### Prerequisites
 
-ต้องมี Node.js 18+ และ backend รันอยู่แล้ว (ดู [backend repo](https://github.com/RmenozBun/basic-java-learn-backend))
-Requires Node.js 18+ and the backend already running (see the [backend repo](https://github.com/RmenozBun/basic-java-learn-backend)).
+- Node.js 18+
+- The [backend](https://github.com/RmenozBun/basic-java-learn-backend) running and reachable, since this frontend has no functionality of its own without it (default expected at `http://localhost:4000/api`)
+
+### Install
 
 ```bash
 npm install
-npm run dev     # http://localhost:3000, เรียก backend ที่ http://localhost:4000/api โดยดีฟอลต์
-                 # calls the backend at http://localhost:4000/api by default
 ```
 
-## Environment variables
+### Run in development
 
-| Variable | คำอธิบาย | Description | Default (production build) |
-|---|---|---|---|
-| `API_BASE_URL` | URL ของ backend API | Backend API URL | `http://localhost:4000/api` |
+```bash
+npm run dev
+```
 
-ตั้งค่านี้ใน `nuxt.config.js` ผ่าน `environment.production.api` | Configured in `nuxt.config.js` via `environment.production.api`.
+The app runs at `http://localhost:3000` and calls the backend at `http://localhost:4000/api` by default (configurable via the `API_BASE_URL` environment variable, see `nuxt.config.js`).
 
-## ⚠️ ข้อจำกัดของ Playground | Playground limitations
+### Other scripts
 
-หน้า Playground แสดงข้อความแจ้งข้อจำกัดเหล่านี้ให้ผู้ใช้เห็นอยู่แล้วในตัวเว็บ:
-The Playground page itself always shows these limitations to users:
+```bash
+npm run build      # build for production (SSR-capable bundle, unused here since ssr is disabled)
+npm run generate    # pre-render as a static site (used for deployment, see below)
+npm run start       # run the built app
+```
 
-- รองรับเฉพาะภาษาอังกฤษในโค้ด/input | English (ASCII) only in code/input
-- โค้ดที่ใช้ `Scanner` ต้องใส่ค่าใน Standard Input ก่อนกดรัน | code using `Scanner` needs its input provided in Standard Input before running
-- ไฟล์เดียว ใช้ได้เฉพาะ Java SE มาตรฐาน | single file, standard Java SE library only
-- บริการรันโค้ดฟรีสาธารณะ (Wandbox) ไม่มี SLA | runs on the free public Wandbox service — no SLA
+### Environment variables
 
-## Deploy ฟรี | Free deployment
+| Variable | Description | Default |
+|---|---|---|
+| `API_BASE_URL` | Base URL of the backend API | `http://localhost:4000/api` |
 
-Build เป็น static site (`nuxt generate`, ทดสอบผ่านแล้ว) แล้ว deploy ขึ้น **Vercel** หรือ **Netlify** ได้ฟรี
-Builds as a static site (`nuxt generate`, verified working) and deploys free to **Vercel** or **Netlify**.
+## Project Structure
 
-### ขั้นตอน Deploy บน Vercel | Deploying to Vercel
+```text
+pages/
+  index.vue           # Landing page
+  start.vue           # Name + email entry before learning starts
+  lessons/index.vue    # Lesson list, filterable by level, with overall progress bar
+  lessons/_slug.vue    # Lesson content + exercises + next/previous navigation
+  playground.vue       # Free-form Java code playground
+  progress.vue         # Student's per-level progress summary
+components/
+  CodeEditor.vue        # Wraps CodeMirror 5 (must stay inside <client-only>)
+  ExerciseCard.vue       # Exercise box: editor + run/submit buttons
+store/index.js          # Holds the student session (name + email) in Vuex
+plugins/
+  axios.js               # Alerts when the backend is unreachable
+  notiflix.js             # Loading indicator plugin
+  hydrate-session.js      # Restores the session from localStorage before the first page mounts
+```
 
-1. Push repo นี้ขึ้น GitHub (ทำไปแล้ว) | Push this repo to GitHub (already done)
-2. ไปที่ | Go to https://vercel.com → "Add New" → "Project" → เชื่อม repo นี้ | connect this repo
-3. ตั้งค่า | Configure:
-   - **Framework Preset:** Nuxt.js
-   - **Build Command:** `npm run generate`
-   - **Output Directory:** `dist`
-4. เพิ่ม Environment Variable | Add environment variable:
-   ```env
-   API_BASE_URL=https://your-backend.onrender.com/api
-   NODE_ENV=production
-   ```
-   (ใส่ URL ของ backend ที่ deploy ไว้แล้ว — ดู [backend repo](https://github.com/RmenozBun/basic-java-learn-backend))
-   (use the backend URL you already deployed — see the [backend repo](https://github.com/RmenozBun/basic-java-learn-backend))
-5. Deploy — ได้ URL แบบ `https://your-app.vercel.app` ใช้งานได้ทันที
-   Deploy — you'll get a URL like `https://your-app.vercel.app`, ready to use immediately.
+## Deployment
 
-### Netlify (ทางเลือก | alternative)
+The app builds as a static site (`npm run generate`, output in `dist/`) and can be deployed for free to Vercel or Netlify:
 
-ตั้งค่าเหมือนกัน: Build command `npm run generate`, Publish directory `dist`, และ environment variable `API_BASE_URL` เหมือนข้างบน
-Same settings: build command `npm run generate`, publish directory `dist`, and the same `API_BASE_URL` environment variable as above.
+- **Build command:** `npm run generate`
+- **Output/publish directory:** `dist`
+- **Environment variable:** `API_BASE_URL` set to the deployed backend's URL
+
+## Author
+
+**Theeranat Aiyarakhom**
+GitHub: [https://github.com/RmenozBun](https://github.com/RmenozBun)
+
+---
+
+## ภาษาไทย
+
+# Java Learn — Frontend
+
+เว็บเรียนภาษา Java แบบ interactive สำหรับนักศึกษาสายวิทยาการคอมพิวเตอร์ชั้นปีที่ 1 พัฒนาเป็น Single Page Application ด้วย Nuxt 2 / Vue 2 ผู้เรียนกรอกชื่อและอีเมล (ไม่ต้องสมัครสมาชิก ไม่ต้องตั้งรหัสผ่าน) เพื่อเก็บ session ไว้ในเครื่อง จากนั้นเรียนบทเรียนที่แบ่งเป็น 3 ระดับ (ง่าย/กลาง/ยาก) เขียนโค้ด Java ได้โดยตรงในเครื่องมือแก้ไขโค้ด CodeMirror บนเบราว์เซอร์ รันโค้ดผ่านบริการรันโค้ดสาธารณะ และส่งคำตอบแบบฝึกหัดเพื่อให้ตรวจให้คะแนนอัตโนมัติโดยเทียบกับชุดทดสอบของ backend ความคืบหน้าจะถูกติดตามแยกตามระดับ และแสดงทั้งในหน้ารายการบทเรียนและหน้าความคืบหน้าโดยเฉพาะ frontend นี้ทำหน้าที่เป็นเพียงตัวเรียก API เท่านั้น เนื้อหาบทเรียน การรันโค้ด และการตรวจคำตอบทั้งหมดอยู่ใน backend คนละ repo: [basic-java-learn-backend](https://github.com/RmenozBun/basic-java-learn-backend)
+
+## ฟีเจอร์
+
+- **หน้าเริ่มต้นแบบไม่ต้องสมัครสมาชิก** (`pages/start.vue`) — กรอกชื่อและอีเมล เก็บไว้ใน Vuex และสำรองไว้ใน `localStorage` (`javaLearnStudent`) เพื่อให้ session อยู่รอดแม้รีเฟรชหน้า โดยไม่มีการยืนยันตัวตนจริง
+- **รายการบทเรียน** (`pages/lessons/index.vue`) — แสดงบทเรียนที่ดึงมาจาก backend กรองตามระดับได้ (ทั้งหมด/ง่าย/กลาง/ยาก) ผ่านแท็บ พร้อม progress bar รวมแสดงจำนวนแบบฝึกหัดที่ผ่านแล้วเทียบกับทั้งหมด
+- **หน้ารายละเอียดบทเรียน** (`pages/lessons/_slug.vue`) — แสดงเนื้อหาบทเรียนที่เขียนด้วย Markdown (ผ่าน `marked`) รายการแบบฝึกหัดของบทนั้น และปุ่มไปบทถัดไป/ก่อนหน้า พร้อมข้อความแสดงความยินดีเมื่อผ่านทุกแบบฝึกหัดในบทแล้ว
+- **เครื่องมือแก้ไขโค้ด Java บนเบราว์เซอร์** (`components/CodeEditor.vue`) — ครอบ CodeMirror 5 พร้อม syntax highlighting ภาษา Java (ธีม dracula) โหลดเฉพาะฝั่ง client เท่านั้น (อยู่ใน `<client-only>`) เนื่องจากแอปนี้รันแบบ SPA
+- **แบบฝึกหัดพร้อมปุ่มรัน/ส่งคำตอบ** (`components/ExerciseCard.vue`) — ปุ่ม "รัน" ใช้ทดสอบโค้ดกับ Standard Input ที่พิมพ์เอง (ไม่นับคะแนน) ส่วนปุ่ม "ส่งคำตอบ" จะรันโค้ดกับชุดทดสอบจริงของโจทย์และบันทึกผลผ่าน/ไม่ผ่านผ่าน backend
+- **Playground เขียนโค้ดอิสระ** (`pages/playground.vue`) — เขียนและรันโค้ด Java ไฟล์เดียวพร้อม standard input ที่กำหนดเอง โดยไม่ผูกกับบทเรียนใด หน้านี้ระบุข้อจำกัดจริงของบริการรันโค้ดไว้ให้เห็นชัดเจน (รองรับเฉพาะภาษาอังกฤษ/ASCII, ไฟล์เดียว, ใช้ได้เฉพาะ Java SE มาตรฐาน, ไม่มี SLA)
+- **หน้าความคืบหน้า** (`pages/progress.vue`) — สรุปจำนวนแบบฝึกหัดที่ผ่านแล้วเทียบกับทั้งหมดแยกตามระดับ พร้อม progress bar แสดงเมื่อมี session ผู้เรียนแล้วเท่านั้น
+- **แจ้งเตือนเมื่อเชื่อมต่อ backend ไม่ได้** (`plugins/axios.js`) — แสดงกล่องแจ้งเตือนทุกครั้งที่เรียก API แล้วไม่ได้รับ response กลับมา เพื่อให้ผู้ใช้ตรวจสอบว่าเปิด backend server ไว้แล้วหรือยัง
+
+## Tech Stack
+
+- [Nuxt.js 2](https://nuxtjs.org/) (Vue 2, Options API) รันในโหมด SPA (`ssr: false`, `target: 'static'`) เนื่องจากแอปพึ่งพา session ที่เก็บใน `localStorage` และไม่ได้ประโยชน์จาก Server-Side Rendering
+- [Vuetify 2](https://vuetifyjs.com/) สำหรับ UI component และธีม
+- [CodeMirror 5](https://codemirror.net/5/) สำหรับเครื่องมือแก้ไขโค้ด Java บนเบราว์เซอร์
+- [@nuxtjs/axios](https://axios.nuxtjs.org/) สำหรับเรียก API ของ backend
+- [marked](https://marked.js.org/) สำหรับแปลงเนื้อหาบทเรียนจาก Markdown
+- [notiflix](https://notiflix.github.io/) สำหรับตัวแสดงสถานะกำลังโหลด
+- [vue-sweetalert2](https://github.com/avil13/vue-sweetalert2) สำหรับกล่องแจ้งเตือน/ยืนยัน
+- Vuex (มาพร้อม Nuxt) สำหรับเก็บ session ผู้เรียนปัจจุบัน
+
+## เริ่มต้นใช้งาน
+
+### สิ่งที่ต้องมีก่อน
+
+- Node.js 18 ขึ้นไป
+- [backend](https://github.com/RmenozBun/basic-java-learn-backend) ต้องรันอยู่และเชื่อมต่อได้ เพราะ frontend นี้ไม่มีฟังก์ชันใดทำงานได้เองเลยถ้าไม่มี backend (ค่าเริ่มต้นคือ `http://localhost:4000/api`)
+
+### ติดตั้ง
+
+```bash
+npm install
+```
+
+### รันในโหมดพัฒนา
+
+```bash
+npm run dev
+```
+
+แอปจะรันที่ `http://localhost:3000` และเรียก backend ที่ `http://localhost:4000/api` โดยดีฟอลต์ (ปรับได้ผ่านตัวแปรแวดล้อม `API_BASE_URL` ดูใน `nuxt.config.js`)
+
+### คำสั่งอื่นๆ
+
+```bash
+npm run build      # build สำหรับ production (bundle ที่รองรับ SSR แต่ไม่ได้ใช้เพราะปิด ssr ไว้)
+npm run generate    # สร้างเป็น static site ล่วงหน้า (ใช้สำหรับ deploy ด้านล่าง)
+npm run start       # รันแอปที่ build แล้ว
+```
+
+### ตัวแปรแวดล้อม
+
+| ตัวแปร | คำอธิบาย | ค่าเริ่มต้น |
+|---|---|---|
+| `API_BASE_URL` | URL หลักของ backend API | `http://localhost:4000/api` |
+
+## โครงสร้างโปรเจกต์
+
+```text
+pages/
+  index.vue            # หน้าแรก
+  start.vue            # กรอกชื่อ+อีเมลก่อนเริ่มเรียน
+  lessons/index.vue     # รายการบทเรียน กรองตามระดับได้ พร้อม progress bar รวม
+  lessons/_slug.vue     # เนื้อหาบทเรียน + แบบฝึกหัด + ปุ่มไปต่อ/กลับ
+  playground.vue        # เขียน/รันโค้ด Java อิสระ
+  progress.vue          # สรุปความคืบหน้าของผู้เรียนแยกตามระดับ
+components/
+  CodeEditor.vue         # ครอบ CodeMirror 5 (ต้องอยู่ใน <client-only>)
+  ExerciseCard.vue        # กล่องแบบฝึกหัด: editor + ปุ่มรัน/ส่งคำตอบ
+store/index.js            # เก็บ session ผู้เรียน (ชื่อ+อีเมล) ด้วย Vuex
+plugins/
+  axios.js                 # แจ้งเตือนเมื่อเชื่อมต่อ backend ไม่ได้
+  notiflix.js               # ปลั๊กอินตัวแสดงสถานะกำลังโหลด
+  hydrate-session.js         # โหลด session จาก localStorage ก่อน mount หน้าแรก
+```
+
+## การ Deploy
+
+แอปนี้ build เป็น static site ได้ (`npm run generate` ผลลัพธ์อยู่ใน `dist/`) และ deploy ขึ้น Vercel หรือ Netlify ได้ฟรี:
+
+- **Build command:** `npm run generate`
+- **Output/publish directory:** `dist`
+- **ตัวแปรแวดล้อม:** `API_BASE_URL` ตั้งเป็น URL ของ backend ที่ deploy ไว้แล้ว
+
+## ผู้พัฒนา
+
+**ธีรนาถ อัยราคม**
+GitHub: [https://github.com/RmenozBun](https://github.com/RmenozBun)
