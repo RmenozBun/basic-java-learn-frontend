@@ -1,5 +1,3 @@
-import colors from 'vuetify/es5/util/colors'
-
 const environment = {
   development: { api: 'http://localhost:4000/api' },
   production: { api: process.env.API_BASE_URL || 'http://localhost:4000/api' }
@@ -34,14 +32,20 @@ export default {
       { name: 'format-detection', content: 'telephone=no' }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' },
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'
+      }
     ]
   },
 
   css: [
     'codemirror/lib/codemirror.css',
-    'codemirror/theme/dracula.css',
-    '~/assets/css/main.css'
+    '~/assets/css/main.css',
+    '~/assets/css/lesson.css'
   ],
 
   plugins: [
@@ -71,14 +75,15 @@ export default {
     theme: {
       dark: false,
       themes: {
+        // Coffee + Java-logo palette: burnt orange (steam/cup), Java blue, espresso brown
         light: {
-          primary: '#2e7d32',
-          secondary: colors.blueGrey.darken2,
-          accent: colors.orange.darken1,
-          info: colors.blue.darken1,
-          warning: colors.amber.darken2,
-          error: colors.red.darken2,
-          success: colors.green.darken1
+          primary: '#B85400',
+          secondary: '#456E8C',
+          accent: '#F89820',
+          info: '#456E8C',
+          warning: '#D98B00',
+          error: '#B3261E',
+          success: '#3B7D3F'
         }
       }
     }

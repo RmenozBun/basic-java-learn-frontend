@@ -39,12 +39,16 @@ export default {
 
       this.editor = CodeMirror.fromTextArea(this.$refs.textarea, {
         mode: 'text/x-java',
-        theme: 'dracula',
+        theme: 'coffee',
         lineNumbers: true,
         indentUnit: 4,
         tabSize: 4,
         indentWithTabs: false,
-        matchBrackets: true
+        matchBrackets: true,
+        extraKeys: {
+          Tab: (cm) => cm.execCommand('insertSoftTab'),
+          'Shift-Tab': (cm) => cm.execCommand('indentLess')
+        }
       })
       this.editor.setValue(this.value || '')
       this.editor.setSize('100%', this.height)

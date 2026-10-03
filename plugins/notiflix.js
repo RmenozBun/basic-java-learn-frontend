@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Notiflix from 'notiflix'
 
-Notiflix.Loading.init({ svgColor: '#2e7d32' })
+Notiflix.Loading.init({ svgColor: '#B85400' })
 
 // Notiflix v3 renamed Loading.loading()/remove() to Loading.standard()/remove().
 // Keep the familiar $Notiflix.loading()/remove() call sites working.
